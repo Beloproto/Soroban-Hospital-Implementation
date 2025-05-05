@@ -191,10 +191,112 @@ impl HospitalContract {
     
    }
 
+   pub fn set_patient_active(env: Env, id: u64, active: bool) -> Patient {
+
+    Self::check_admin(&env);
+
+    // Get existing patient 
+    let mut patient: Patient = env.storage().instance().get(&DataKey::Patient(id)).unwrap_or_else(|| panic!("Patient not found"));
+
+    // Update status 
+    patient.active = active;
+
+    // Save updated patient 
+    env.storage().instance().set(&DataKey::Patient(id), &patient);
+
+    patient
+   }
+
+   // List all patients 
+   pub fn list_patients(env: Env) -> Vec<Patient> {
+    let patient_count: u64 = env.storage().instance().get(&DataKey::PatientCount).unwrap_or(0);
+    let mut patients = Vec::new(&env);
+
+    for i in 1..=patient_count {
+        if let Some(patient) = env.storage().instance().get(&DataKey::Patient(i)) {
+            patients.push_back(patient);
+        }
+    }
+    patients
+   }
+
+   pub fn register_doctor(
+    env: Env,
+    name: String,
+    specialization: String,
+    license_number: String,
+   ) -> u64 {
+    Self::check_admin(&env);
+
+    let doctor_count: u64 = env.storage().instance().get(&DataKey::DoctorCount).unwrap_or(0);
+    let new_id = doctor_count + 1;
+
+    let doctor = Doctor {
+        id: new_id,
+        name,
+        specialization,
+        license_number,
+        active: true,
+    };
+
+    env.storage().instance().set(&DataKey::Doctor(new_id), &doctor);
+    env.storage().instance().set(&DataKey::DoctorCount, &new_id);
+
+    env.storage().instance().set(&DataKey::DoctorTests(new_id), &Vec::<u64>::new(&env));
+    
+    new_id
+   }
+
+   pub fn get_doctor(env: Env, id: u64) -> Doctor {
+    match  env.storage().instance().get(&DataKey::Doctor(id)){
+        Some(doctor) => doctor,
+        None => panic!("Doctor not found"),
+    }
+   }
 
 
+   pub fn update_doctor(
+    env: Env,
+    id: u64,
+    name: String,
+    specialization: String,
+    license_number: String
+   ) -> Doctor {
 
+    Self::check_admin(&env);
+
+    let mut doctor: Doctor = env.storage().instance().get(&DataKey::Doctor(id)).unwrap_or_else(|| panic!("Doctor not found"));
+
+    // udate fields 
+    doctor.name = name;
+    doctor.specialization = specialization;
+    doctor.license_number = license_number;
+
+    env.storage().instance().set(&DataKey::Doctor(id), &doctor);
+
+    doctor
+   }
+
+
+   pub fn set_doctor_active(env: Env, id: u64, active: bool) -> Doctor {
+    Self::check_admin(&env);
+
+    let  mut doctor: Doctor = env.storage().instance().get(&DataKey::Doctor(id)).unwrap_or_else(|| panic!("Doctor not found"));
+
+    doctor.active = active;
+
+    env.storage().instance().set(&DataKey::Doctor(id), &doctor);
+
+    doctor
+   }
+
+
+   pub fn list_doctors(env: Env) -> Vec<Doctor> {
+    todo!()
+   }
 
 }
+
+
 
 mod test;
