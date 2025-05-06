@@ -292,8 +292,20 @@ impl HospitalContract {
 
 
    pub fn list_doctors(env: Env) -> Vec<Doctor> {
-    todo!()
+    let doctor_count: u64 = env.storage().instance().get(&DataKey::DoctorCount).unwrap_or(0);
+    let mut doctors = Vec::new(&env);
+
+    for i in 1..=doctor_count {
+        if let Some(doctor) = env.storage().instance().get(&DataKey::Doctor(i)) {
+            doctors.push_back(doctor);
+        }
+    }
+
+    doctors
    }
+
+
+   // 
 
 }
 
