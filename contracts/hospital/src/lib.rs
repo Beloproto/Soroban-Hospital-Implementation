@@ -67,6 +67,7 @@ pub struct MedicalTest {
     test_date: u64,
     results: String,
     notes: String,
+    department: String,
 }
  
 
@@ -82,6 +83,7 @@ pub enum DataKey {
     PatientCount,
     DoctorCount,
     TestCount,
+    TestStatistics(String, String), // (test_type, department)
 }
 
 
@@ -304,11 +306,48 @@ impl HospitalContract {
     doctors
    }
 
+   // Medical Test Management Functions
 
-   // 
+   // Get all medical tests for a patient
+   pub fn get_patient_medical_tests(env: Env, patient_id: u64) -> Vec<MedicalTest> {
+    // Check if patient exists
+    let _: Patient = env.storage().instance().get(&DataKey::Patient(patient_id))
+        .unwrap_or_else(|| panic!("Patient not found"));
 
+    // Get list of test IDs for this patient
+    let test_ids: Vec<u64> = env.storage().instance().get(&DataKey::PatientTests(patient_id))
+        .unwrap_or_else(|| Vec::new(&env));
+
+    // Fetch each test
+    let mut tests = Vec::new(&env);
+    for id in test_ids.iter() {
+        if let Some(test) = env.storage().instance().get(&DataKey::MedicalTest(*id)) {
+            tests.push_back(test);
+        }
+    }
+
+    tests
+   }
+
+   // Get statistics for a specific test type and department
+   pub fn get_test_statistics(env: Env, test_type: String, department: String) -> u64 {
+    let stats_key = DataKey::TestStatistics(test_type, department);
+    env.storage().instance().get(&stats_key).unwrap_or(0)
+   }
+
+   // List all medical tests
+   pub fn list_medical_tests(env: Env) -> Vec<MedicalTest> {
+    let test_count: u64 = env.storage().instance().get(&DataKey::TestCount).unwrap_or(0);
+    let mut tests = Vec::new(&env);
+
+    for i in 1..=test_count {
+        if let Some(test) = env.storage().instance().get(&DataKey::MedicalTest(i)) {
+            tests.push_back(test);
+        }
+    }
+
+    tests
+   }
 }
-
-
 
 mod test;
